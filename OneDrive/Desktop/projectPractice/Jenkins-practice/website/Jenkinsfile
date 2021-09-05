@@ -119,7 +119,6 @@ pipeline {
                     npm install &&
                     npm run test
                     '''
-                }
             }
         }
 
@@ -133,8 +132,9 @@ pipeline {
                 //여기서는 PROD 인지 DEV인지 알려주는 것만.
                 dir ('./OneDrive/Desktop/projectPractice/Jenkins-practice/server') { 
                     sh """
-                    docker build . -t server --bulid-arg env=${PROD}
+                    docker build . -t server 
                     """
+                    //--bulid-arg env=${PROD}
                 }
             }
 
