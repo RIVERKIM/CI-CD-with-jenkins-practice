@@ -121,6 +121,7 @@ pipeline {
                     '''
             }
         }
+        }
 
         //우리가 backend는 docker로 배포하기 때문에
         //jenkins에 docker를 설치해 줬다는 가정하에.
@@ -170,6 +171,6 @@ pipeline {
                 }
             }
         }
-    }
+    
 }
 }
