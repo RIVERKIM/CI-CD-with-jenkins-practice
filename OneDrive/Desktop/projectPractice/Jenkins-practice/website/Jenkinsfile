@@ -72,7 +72,7 @@ pipeline {
                 success {
                     echo 'Successfully Cloned Repository'
 
-                    mail to: 'kgr4163@korea.ac.kr',
+                    mail to: 'garamkim1357@gmail.com',
                          subject: 'Deploy Frontend Success',
                          body: "Successfully deployed frontend!!"
                 }
@@ -80,7 +80,7 @@ pipeline {
                 failure {
                     echo 'I failed :('
 
-                    mail to: 'kgr4163@korea.ac.kr',
+                    mail to: 'garamkim1357@gmail.com',
                          subject: 'Failed pipeline',
                          body: "Something is wrong with deploy frontend"
                 }
