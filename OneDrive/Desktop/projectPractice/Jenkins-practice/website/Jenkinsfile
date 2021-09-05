@@ -114,11 +114,12 @@ pipeline {
             steps {
                 echo 'Test Backend'
             
-                dir ('./OneDrive/Desktop/projectPractice/Jenkins-practice/server')
+                dir ('./OneDrive/Desktop/projectPractice/Jenkins-practice/server') {
                     sh '''
                     npm install &&
                     npm run test
                     '''
+                }
             }
         }
 
