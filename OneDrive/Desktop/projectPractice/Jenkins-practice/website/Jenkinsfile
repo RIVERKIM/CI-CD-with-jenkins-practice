@@ -21,7 +21,7 @@ pipeline {
             agent any
 
             steps {
-                echo "Lets start Long Journey! Env: ${Env}"
+                //echo "Lets start Long Journey! Env: ${Env}"
                 echo 'Clonning Repostiory'
 
                 git url: 'https://github.com/RIVERKIM/CI-CD-with-jenkins-practice.git',
@@ -61,7 +61,7 @@ pipeline {
             steps {
                 echo "Delopying Frontend"
                 //프론트엔드 디렉토리의 정적파일들을 s3에 올림, 이 전에 반드시 EC2 instance profile 등록을 해야함.
-                dir ('./website') {
+                dir ('./OneDrive/Desktop/projectPractice/Jenkins-practice/website') {
                     sh '''
                     aws s3 sync ./ s3://testforgaram
                     '''
@@ -72,17 +72,17 @@ pipeline {
                 success {
                     echo 'Successfully Cloned Repository'
 
-                    mail to: 'garamkim1357@gmail.com',
-                         subject: 'Deploy Frontend Success',
-                         body: "Successfully deployed frontend!!"
+                    // mail to: 'garamkim1357@gmail.com',
+                    //      subject: 'Deploy Frontend Success',
+                    //      body: "Successfully deployed frontend!!"
                 }
 
                 failure {
                     echo 'I failed :('
 
-                    mail to: 'garamkim1357@gmail.com',
-                         subject: 'Failed pipeline',
-                         body: "Something is wrong with deploy frontend"
+                    // mail to: 'garamkim1357@gmail.com',
+                    //      subject: 'Failed pipeline',
+                    //      body: "Something is wrong with deploy frontend"
                 }
             }
         }
@@ -96,7 +96,7 @@ pipeline {
             }
 
             steps {
-                dir ('./server') {
+                dir ('./OneDrive/Desktop/projectPractice/Jenkins-practice/server') {
                     sh '''
                     npm install &&
                     npm run lint
@@ -114,7 +114,7 @@ pipeline {
             steps {
                 echo 'Test Backend'
             
-                dir ('./server')
+                dir ('./OneDrive/Desktop/projectPractice/Jenkins-practice/server')
                     sh '''
                     npm install &&
                     npm run test
@@ -130,7 +130,7 @@ pipeline {
                 echo 'Build Backend'
                 //build 관련 파라미터는 application레벨에서 관리하고
                 //여기서는 PROD 인지 DEV인지 알려주는 것만.
-                dir ('./server') { 
+                dir ('./OneDrive/Desktop/projectPractice/Jenkins-practice/server') { 
                     sh """
                     docker build . -t server --bulid-arg env=${PROD}
                     """
@@ -152,7 +152,7 @@ pipeline {
             steps {
                 echo 'Build Backend'
 
-                dir('./server') { //두번째 실행부터는 docker rm -f $(docker ps -aq)와 같은 
+                dir('./OneDrive/Desktop/projectPractice/Jenkins-practice/server') { //두번째 실행부터는 docker rm -f $(docker ps -aq)와 같은 
                 //명령어 써서 돌고 있는 컨테이너들 꺼야함. 
                     sh '''
                     docker run -p 80:80 -d server
@@ -162,9 +162,10 @@ pipeline {
 
             post {
                 success {
-                    mail to: "kgr4163@korea.ac.kr",
-                         subject: "Deploy Success",
-                         body: "Successfully deployed!"
+                    echo "Build backend success!"
+                    // mail to: "kgr4163@korea.ac.kr",
+                    //      subject: "Deploy Success",
+                    //      body: "Successfully deployed!"
                 }
             }
         }
