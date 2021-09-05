@@ -1,0 +1,172 @@
+pipeline {
+    //어떤 노예를 쓸건가
+    agent any
+
+    // 몇 분 주기로 trigger되는 가
+    triggers {
+        pollSCM('*/3 * * * *')
+    }
+    // 이 파이프라인에서 쓸 환경변수들
+    environment {
+        //key를 이용해서 aws 명령어 사용하기 위해
+        AWS_ACCESS_KEY_ID = credentials('awsAccessKeyId') //설정한 cridentials 이름
+        AWS_SECRET_ACCESS_KEY = credentials('awsSecretAccessKey')
+        AWS_DEFAULT_REGION = 'ap-northeast-2' // default 서울.
+        HOME = '.'
+    }
+    //pipeline 각 단계
+    stages {
+        // git레포지토리를 다운.
+        stage('Prepare') {
+            agent any
+
+            steps {
+                echo "Lets start Long Journey! Env: ${Env}"
+                echo 'Clonning Repostiory'
+
+                git url: 'https://github.com/RIVERKIM/CI-CD-with-jenkins-practice.git',
+                    branch: 'master',
+                    credentialsId: 'jenkinsForGit'
+
+            }
+
+            post {
+                success {
+                    echo 'Successfully Cloned Repository'
+                }
+                
+                always {
+                    echo "i tried..."
+                }
+                //post 다 끝났을 때 
+                cleanup {
+                    echo "after all other post condition"
+                }
+            }
+
+        }
+
+        stage('Only for production') {
+            when {
+                branch 'production'
+                environment name: 'APP_ENV', value: 'prod'
+                anyOf {
+                    environment name: 'DEPLOY_TO', value: 'production'
+                    environment name: 'DEPLOY_TO', value: 'staging'
+                }
+            }
+        }
+        //aws s3에 파일을 올림.
+        stage('Deploy Frontend') {
+            steps {
+                echo "Delopying Frontend"
+                //프론트엔드 디렉토리의 정적파일들을 s3에 올림, 이 전에 반드시 EC2 instance profile 등록을 해야함.
+                dir ('./website') {
+                    sh '''
+                    aws s3 sync ./ s3://testforgaram
+                    '''
+                }
+            }
+
+            post {
+                success {
+                    echo 'Successfully Cloned Repository'
+
+                    mail to: 'kgr4163@korea.ac.kr',
+                         subject: 'Deploy Frontend Success',
+                         body: "Successfully deployed frontend!!"
+                }
+
+                failure {
+                    echo 'I failed :('
+
+                    mail to: 'kgr4163@korea.ac.kr',
+                         subject: 'Failed pipeline',
+                         body: "Something is wrong with deploy frontend"
+                }
+            }
+        }
+
+        stage('Lint Backend') {
+            //Docker plugin and Docker pipeline 두개를 깔아야 가능.
+            agent {// jenkins 는 node가 없기때문에 docker 에 노드 받아서 실행하라고 명령.
+                docker {
+                    image 'node:latest'
+                }
+            }
+
+            steps {
+                dir ('./server') {
+                    sh '''
+                    npm install &&
+                    npm run lint
+                    '''
+                }
+            }
+        }
+
+        stage('Test Backend') {
+            agent {
+                docker {
+                    image 'node:latest'
+                }
+            }
+            steps {
+                echo 'Test Backend'
+            
+                dir ('./server')
+                    sh '''
+                    npm install &&
+                    npm run test
+                    '''
+            }
+        }
+
+        //우리가 backend는 docker로 배포하기 때문에
+        //jenkins에 docker를 설치해 줬다는 가정하에.
+        stage('Build Backend') {
+            agent any
+            steps {
+                echo 'Build Backend'
+                //build 관련 파라미터는 application레벨에서 관리하고
+                //여기서는 PROD 인지 DEV인지 알려주는 것만.
+                dir ('./server') { 
+                    sh """
+                    docker build . -t server --bulid-arg env=${PROD}
+                    """
+                }
+            }
+
+            post {
+                failure {
+                    //빌드 하다가 실패하면 pipeline 종료.
+                    error 'This pipeline stops here'
+                }
+            }
+        }
+
+        stage('Deploy Backend') {
+            //실환경에는 ecs 혹은 쿠버네티스 환경 업데이트
+            agent any
+            
+            steps {
+                echo 'Build Backend'
+
+                dir('./server') { //두번째 실행부터는 docker rm -f $(docker ps -aq)와 같은 
+                //명령어 써서 돌고 있는 컨테이너들 꺼야함. 
+                    sh '''
+                    docker run -p 80:80 -d server
+                    '''
+                }
+            }
+
+            post {
+                success {
+                    mail to: "kgr4163@korea.ac.kr",
+                         subject: "Deploy Success",
+                         body: "Successfully deployed!"
+                }
+            }
+        }
+    }
+}
