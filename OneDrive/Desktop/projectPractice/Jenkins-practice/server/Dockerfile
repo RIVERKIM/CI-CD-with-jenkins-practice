@@ -7,7 +7,7 @@ COPY . /
 ARG env
 ENV APP_ENV=$env
 RUN npm install
-RUN npm build
+RUN npm run build
 
 EXPOSE 80
 
