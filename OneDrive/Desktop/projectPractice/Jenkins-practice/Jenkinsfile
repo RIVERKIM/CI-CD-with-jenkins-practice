@@ -61,7 +61,7 @@ pipeline {
             steps {
                 echo "Delopying Frontend"
                 //프론트엔드 디렉토리의 정적파일들을 s3에 올림, 이 전에 반드시 EC2 instance profile 등록을 해야함.
-                dir ('./OneDrive/Desktop/projectPractice/Jenkins-practice/website') {
+                dir ('/var/lib/jenkins/workspace/myProject@2/OneDrive/Desktop/projectPractice/Jenkins-practice/website') {
                     sh '''
                     aws s3 sync ./ s3://testforgaram
                     '''
